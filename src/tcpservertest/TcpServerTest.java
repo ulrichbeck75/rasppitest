@@ -17,8 +17,9 @@ import java.util.Scanner;
  */
 public class TcpServerTest {
 
-  final static int BUFFER_SIZE = 65536;
-
+  final static int BUFFER_SIZE = 1024;
+  private static Object _lockObject = new Object();
+  
   public static void main(String argv[]) throws Exception {
 //    String clientSentence;
 //    String capitalizedSentence;
@@ -63,14 +64,20 @@ public class TcpServerTest {
               System.arraycopy(rxBuffer, 0, inputBuffer, totalRead, rxBuffer.length);
               totalRead += read;
               
-              if ( (inputBuffer[totalRead-2] == 0x13) && (inputBuffer[totalRead-1] == 0x10) ) { 
-                break;
+              synchronized(_lockObject){
+                if ( (inputBuffer[totalRead-2] == 13) && (inputBuffer[totalRead-1] == 10) ) {                  
+                  System.out.println(LocalDate.now().format(DateTimeFormatter.ISO_DATE)+": RX String:");
+                  System.out.println(inputBuffer);
+                  byte[] retFrame = ProcessFrame(inputBuffer);
+                  clientOutputStream.write(retFrame);
+                  System.out.println(LocalDate.now().format(DateTimeFormatter.ISO_DATE)+": TX String:");
+                  System.out.println(retFrame);
+                  totalRead = 0;
+                }
               }
+           
             }
-            byte[] retFrame = ProcessFrame(inputBuffer);
-
-            clientOutputStream.write(retFrame);
-            //System.out.println(totalRead + " bytes read in " + (endTime - startTime) + " ms.");
+            
           }
         } catch (IOException e) {
         }
