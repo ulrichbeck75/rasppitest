@@ -17,8 +17,9 @@ import java.util.Scanner;
  */
 public class TcpServerTest {
 
-  final static int BUFFER_SIZE = 1024;
-  private static Object _lockObject = new Object();
+  private final static int BUFFER_SIZE = 1024;
+  private final static Object _lockObject = new Object();
+  private static MotorTest motorTest;
   
   public static void main(String argv[]) throws Exception {
 //    String clientSentence;
@@ -38,6 +39,7 @@ public class TcpServerTest {
 //      outToClient.writeBytes(capitalizedSentence);
 //    }
 
+    motorTest = new MotorTest();
     StartTcpServerThread();
 
     promptEnterKey();
@@ -69,6 +71,7 @@ public class TcpServerTest {
                   System.out.println(LocalDate.now().format(DateTimeFormatter.ISO_DATE)+": RX String:");
                   System.out.println(inputBuffer);
                   byte[] retFrame = ProcessFrame(inputBuffer);
+                  motorTest.MotorTest();
                   clientOutputStream.write(retFrame);
                   System.out.println(LocalDate.now().format(DateTimeFormatter.ISO_DATE)+": TX String:");
                   System.out.println(retFrame);
