@@ -20,6 +20,7 @@ public class TcpServerTest {
   private final static int BUFFER_SIZE = 1024;
   private final static Object _lockObject = new Object();
   private static MotorTest motorTest;
+  private static Boolean stopServer;
   
   public static void main(String argv[]) throws Exception {
 //    String clientSentence;
@@ -39,10 +40,13 @@ public class TcpServerTest {
 //      outToClient.writeBytes(capitalizedSentence);
 //    }
 
+    stopServer = false;
     motorTest = new MotorTest();
     StartTcpServerThread();
 
-    promptEnterKey();
+    while(promptEnterKey());
+    
+    stopServer = true;
   }
 
   private static void StartTcpServerThread() {
@@ -51,7 +55,7 @@ public class TcpServerTest {
       public void run() {
         try {
           
-          while (true) {
+          while (!stopServer) {
             ServerSocket serverSocket = new ServerSocket(12345);
             Socket clientSocket = serverSocket.accept();
             byte[] inputBuffer = new byte[BUFFER_SIZE];
@@ -96,9 +100,19 @@ public class TcpServerTest {
     return retFrame;
   }
 
-  public static void promptEnterKey() {
-    System.out.println("Press \"ENTER\" to continue...");
+  public static Boolean promptEnterKey() {
+    System.out.println("Press \"ENTER\" to stop Server...");
     Scanner scanner = new Scanner(System.in);
     scanner.nextLine();
+    
+    if (scanner.hasNextInt()){
+      double angle = (double)scanner.nextInt();
+      motorTest.MoveOnVector(angle, (byte) 50);
+      System.out.println("New Angle: " + angle);
+      return true;
+    }
+      
+    return false;
+    
   }
 }

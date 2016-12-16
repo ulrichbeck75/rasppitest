@@ -68,6 +68,7 @@ public class AdafruitMotorHatDcMotors extends AdafruitMotorHatBase {
       try {
         // Set motor direction befor applying speed set points
         SetMotorDirection(ij, pMotorCommands[ij]); 
+        
         // Set motor speed
         SetMotorSpeed(ij, pMotorSpeeds[ij]);
       } catch (Exception e) {
@@ -81,7 +82,7 @@ public class AdafruitMotorHatDcMotors extends AdafruitMotorHatBase {
   // ### Private Methods ###
   
   // Set motor direction
-  private void SetMotorDirection(int pMotorIndex, EMotorCommands pMotorCommand) throws IOException {
+  private void SetMotorDirection(int pMotorIndex, EMotorCommands pMotorCommand) throws IOException, InterruptedException {
   // set direction
   synchronized(_lockObject){
       switch (pMotorCommand)
@@ -103,7 +104,7 @@ public class AdafruitMotorHatDcMotors extends AdafruitMotorHatBase {
   }
   
   // Set motor speed
-  private void SetMotorSpeed(int ij, byte pMotorSpeed) throws IOException {
+  private void SetMotorSpeed(int ij, byte pMotorSpeed) throws IOException, InterruptedException {
     synchronized(_lockObject){
     pca9685DriverInst.SetPwmPin(dcMotorConfigurations[ij].PwmPinPower(), 0, pMotorSpeed*16);
     }

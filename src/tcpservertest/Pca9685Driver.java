@@ -76,11 +76,12 @@ public class Pca9685Driver {
   }
   
   // Set single output pin on pwm chip
-  public void SetPwmPin(byte pPwmPin, Boolean pSetToHigh) throws IOException
+  public void SetPwmPin(byte pPwmPin, Boolean pSetToHigh) throws IOException, InterruptedException
   {     
     if (pSetToHigh){
       // Set output pin to 1, max. PWM Signal
       _i2cPca9685Device.write(LED0_ON_L + (4 * pPwmPin), (byte)(0x0));
+      Thread.sleep(50);
       _i2cPca9685Device.write(LED0_ON_H + (4 * pPwmPin), (byte)(0x0));
       _i2cPca9685Device.write(LED0_OFF_L + (4 * pPwmPin), (byte)(4096 & 0xFF));
       _i2cPca9685Device.write(LED0_OFF_H + (4 * pPwmPin), (byte)(4096 >> 8));
