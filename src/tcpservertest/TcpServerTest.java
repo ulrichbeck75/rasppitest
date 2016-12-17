@@ -21,6 +21,7 @@ public class TcpServerTest {
   private final static Object _lockObject = new Object();
   private static MotorTest motorTest;
   private static Boolean stopServer;
+  private static Thread _serverThread;
   
   public static void main(String argv[]) throws Exception {
 //    String clientSentence;
@@ -42,22 +43,30 @@ public class TcpServerTest {
 
     stopServer = false;
     motorTest = new MotorTest();
-    StartTcpServerThread();
+    _serverThread = StartTcpServerThread();
 
-    while(promptEnterKey());
+    while(true){
+      if (!promptEnterKey()){
+        stopServer = true;
+        _serverThread.interrupt();
+        break;
+      }
+    }
     
-    stopServer = true;
+    System.out.println("Quitted");
+    
   }
 
-  private static void StartTcpServerThread() {
+  private static Thread StartTcpServerThread() {
     System.out.println("Starting new TCP Server Thread: " + LocalDate.now().format(DateTimeFormatter.ISO_DATE));
-    new Thread(new Runnable() {
+    Thread ServerThread = new Thread(new Runnable() {
       public void run() {
         try {
           
           while (!stopServer) {
             ServerSocket serverSocket = new ServerSocket(12345);
             Socket clientSocket = serverSocket.accept();
+            
             byte[] inputBuffer = new byte[BUFFER_SIZE];
             byte[] rxBuffer = new byte[512];
             int read;
@@ -69,16 +78,28 @@ public class TcpServerTest {
             while ((read = clientInputStream.read(rxBuffer)) != 0) {
               System.arraycopy(rxBuffer, 0, inputBuffer, totalRead, rxBuffer.length);
               totalRead += read;
+              if (totalRead < 3){
+              continue;}
               
               synchronized(_lockObject){
                 if ( (inputBuffer[totalRead-2] == 13) && (inputBuffer[totalRead-1] == 10) ) {                  
-                  System.out.println(LocalDate.now().format(DateTimeFormatter.ISO_DATE)+": RX String:");
-                  System.out.println(inputBuffer);
-                  byte[] retFrame = ProcessFrame(inputBuffer);
-                  motorTest.MotorTest();
+                  System.out.println(LocalDate.now().format(DateTimeFormatter.ISO_DATE)+": RX String: " + inputBuffer.toString());
+                                  
+                  MotorTest.EBasicMoveDirections tmpMoveDir = MotorTest.EBasicMoveDirections.Stop;
+                      
+                  switch(inputBuffer[0]-48){
+                    case 5: tmpMoveDir = MotorTest.EBasicMoveDirections.Stop; break;                   
+                    case 8: tmpMoveDir = MotorTest.EBasicMoveDirections.MoveForward; break;
+                    case 2: tmpMoveDir = MotorTest.EBasicMoveDirections.MoveBackward; break;
+                    case 4: tmpMoveDir = MotorTest.EBasicMoveDirections.MoveCcw; break;
+                    case 6: tmpMoveDir = MotorTest.EBasicMoveDirections.MoveCw; break;
+                    default:tmpMoveDir = MotorTest.EBasicMoveDirections.Stop; break; 
+                  }
+                  
+                  motorTest.MoveBasic(tmpMoveDir, 100);
+                  byte[] retFrame = ProcessFrame(inputBuffer, tmpMoveDir);
                   clientOutputStream.write(retFrame);
-                  System.out.println(LocalDate.now().format(DateTimeFormatter.ISO_DATE)+": TX String:");
-                  System.out.println(retFrame);
+                  System.out.println(LocalDate.now().format(DateTimeFormatter.ISO_DATE)+": TX String: " + retFrame.toString());
                   totalRead = 0;
                 }
               }
@@ -89,13 +110,17 @@ public class TcpServerTest {
         } catch (IOException e) {
         }
       }
-    }).start();
+    });
+    
+    ServerThread.start();
+    
+    return ServerThread;
   }
 
-  private static byte[] ProcessFrame(byte[] inputFrame) {
-    byte[] retFrame = "NAK".getBytes();
+  private static byte[] ProcessFrame(byte[] inputFrame, MotorTest.EBasicMoveDirections pBasicMoveDirection ) {
+    byte[] retFrame = pBasicMoveDirection.toString().getBytes();
 
-    retFrame = inputFrame;
+    //retFrame = inputFrame;
 
     return retFrame;
   }
@@ -107,11 +132,12 @@ public class TcpServerTest {
     
     if (scanner.hasNextInt()){
       double angle = (double)scanner.nextInt();
-      motorTest.MoveOnVector(angle, (byte) 50);
+      motorTest.MoveOnVector(angle, (byte) 150);
       System.out.println("New Angle: " + angle);
       return true;
     }
       
+    System.out.println("No Int -> quitting");
     return false;
     
   }

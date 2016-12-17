@@ -68,11 +68,26 @@ public class Pca9685Driver {
   
   // Set single output pin on pwm chip
   public void SetPwmPin(byte pPwmPin, int on, int off) throws IOException
-  {     
-    _i2cPca9685Device.write(LED0_ON_L + (4 * pPwmPin), (byte)(on & 0xFF));
-    _i2cPca9685Device.write(LED0_ON_H + (4 * pPwmPin), (byte)(on >> 8));
-    _i2cPca9685Device.write(LED0_OFF_L + (4 * pPwmPin), (byte)(off & 0xFF));
-    _i2cPca9685Device.write(LED0_OFF_H + (4 * pPwmPin), (byte)(off >> 8));
+  {   
+   
+    byte[] tmpArray = new byte[]{
+      (byte)(on & 0xFF),
+      (byte)(on >> 8),
+      (byte)(off & 0xFF),
+      (byte)(off >> 8)  };
+    
+    
+    _i2cPca9685Device.write(LED0_ON_L + (4 * pPwmPin), tmpArray, 0, 4);
+       
+    /*
+    // read back applied values from pca9685
+    on = ( _i2cPca9685Device.read(LED0_ON_H + (4 * pPwmPin)) << 8) + 
+         ( _i2cPca9685Device.read(LED0_ON_L + (4 * pPwmPin)) & 0xFF);
+    off = ( _i2cPca9685Device.read(LED0_OFF_H + (4 * pPwmPin)) << 8) + 
+         ( _i2cPca9685Device.read(LED0_OFF_L + (4 * pPwmPin)) & 0xFF);
+    
+    System.out.println("ReadBack Values: On/Off "+ on + "/" + off);
+    */
   }
   
   // Set single output pin on pwm chip
@@ -80,18 +95,11 @@ public class Pca9685Driver {
   {     
     if (pSetToHigh){
       // Set output pin to 1, max. PWM Signal
-      _i2cPca9685Device.write(LED0_ON_L + (4 * pPwmPin), (byte)(0x0));
-      Thread.sleep(50);
-      _i2cPca9685Device.write(LED0_ON_H + (4 * pPwmPin), (byte)(0x0));
-      _i2cPca9685Device.write(LED0_OFF_L + (4 * pPwmPin), (byte)(4096 & 0xFF));
-      _i2cPca9685Device.write(LED0_OFF_H + (4 * pPwmPin), (byte)(4096 >> 8));
+      SetPwmPin(pPwmPin, 0,4096);     
     }
     else{
       // Set output pin to 0, no PWM Signal
-      _i2cPca9685Device.write(LED0_ON_L + (4 * pPwmPin), (byte)(4096 & 0xFF));
-      _i2cPca9685Device.write(LED0_ON_H + (4 * pPwmPin), (byte)(4096 >> 8));
-      _i2cPca9685Device.write(LED0_OFF_L + (4 * pPwmPin), (byte)(0x0));
-      _i2cPca9685Device.write(LED0_OFF_H + (4 * pPwmPin), (byte)(0x0));
+      SetPwmPin(pPwmPin, 4096, 0);     
     }
     
   }
