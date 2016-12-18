@@ -83,9 +83,9 @@ public class TcpServerTest {
               
               System.arraycopy(rxBuffer, 0, inputBuffer, totalRead, rxBuffer.length);
               totalRead += read;
-              if (totalRead > 3){              
+              if (totalRead > 4){              
                 synchronized(_lockObject){
-                  if ( (inputBuffer[totalRead-2] == 13) && (inputBuffer[totalRead-1] == 10) ) {                  
+                  if ( (inputBuffer[totalRead-3] == 0) && (inputBuffer[totalRead-2] == 0) && (inputBuffer[totalRead-1] == 0) ) {                  
                     System.out.println(LocalDate.now().format(DateTimeFormatter.ISO_DATE)+": RX String: " + inputBuffer.toString());
 
                     MotorTest.EBasicMoveDirections tmpMoveDir = MotorTest.EBasicMoveDirections.Stop;
