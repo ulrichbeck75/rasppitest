@@ -22,6 +22,7 @@ public class TcpServerTest {
   private static MotorTest motorTest;
   private static Boolean stopServer;
   private static Thread _serverThread;
+  private static ServerSocket serverSocket;
   
   public static void main(String argv[]) throws Exception {
 //    String clientSentence;
@@ -62,9 +63,11 @@ public class TcpServerTest {
     Thread ServerThread = new Thread(new Runnable() {
       public void run() {
         try {
-          
+          byte[] retFrame = ProcessFrame("Start".getBytes());
           while (!stopServer) {
-            ServerSocket serverSocket = new ServerSocket(12345);
+            if (serverSocket==null){
+            serverSocket = new ServerSocket(12345);
+            }
             Socket clientSocket = serverSocket.accept();
             
             byte[] inputBuffer = new byte[BUFFER_SIZE];
@@ -76,38 +79,42 @@ public class TcpServerTest {
             DataOutputStream clientOutputStream = new DataOutputStream(clientSocket.getOutputStream());
             
             while ((read = clientInputStream.read(rxBuffer)) != 0) {
+              if (read < 0){break;}
+              
               System.arraycopy(rxBuffer, 0, inputBuffer, totalRead, rxBuffer.length);
               totalRead += read;
-              if (totalRead < 3){
-              continue;}
-              
-              synchronized(_lockObject){
-                if ( (inputBuffer[totalRead-2] == 13) && (inputBuffer[totalRead-1] == 10) ) {                  
-                  System.out.println(LocalDate.now().format(DateTimeFormatter.ISO_DATE)+": RX String: " + inputBuffer.toString());
-                                  
-                  MotorTest.EBasicMoveDirections tmpMoveDir = MotorTest.EBasicMoveDirections.Stop;
-                      
-                  switch(inputBuffer[0]-48){
-                    case 5: tmpMoveDir = MotorTest.EBasicMoveDirections.Stop; break;                   
-                    case 8: tmpMoveDir = MotorTest.EBasicMoveDirections.MoveForward; break;
-                    case 2: tmpMoveDir = MotorTest.EBasicMoveDirections.MoveBackward; break;
-                    case 4: tmpMoveDir = MotorTest.EBasicMoveDirections.MoveCcw; break;
-                    case 6: tmpMoveDir = MotorTest.EBasicMoveDirections.MoveCw; break;
-                    default:tmpMoveDir = MotorTest.EBasicMoveDirections.Stop; break; 
+              if (totalRead > 3){              
+                synchronized(_lockObject){
+                  if ( (inputBuffer[totalRead-2] == 13) && (inputBuffer[totalRead-1] == 10) ) {                  
+                    System.out.println(LocalDate.now().format(DateTimeFormatter.ISO_DATE)+": RX String: " + inputBuffer.toString());
+
+                    MotorTest.EBasicMoveDirections tmpMoveDir = MotorTest.EBasicMoveDirections.Stop;
+
+                    switch(inputBuffer[0]-48){
+                      case 5: tmpMoveDir = MotorTest.EBasicMoveDirections.Stop; break;                   
+                      case 8: tmpMoveDir = MotorTest.EBasicMoveDirections.MoveForward; break;
+                      case 2: tmpMoveDir = MotorTest.EBasicMoveDirections.MoveBackward; break;
+                      case 4: tmpMoveDir = MotorTest.EBasicMoveDirections.MoveCcw; break;
+                      case 6: tmpMoveDir = MotorTest.EBasicMoveDirections.MoveCw; break;
+                      default:tmpMoveDir = MotorTest.EBasicMoveDirections.Stop; break; 
+                    }
+                    retFrame = ProcessFrame(inputBuffer, tmpMoveDir);
+                    motorTest.MoveBasic(tmpMoveDir, inputBuffer[1]);
+                    totalRead = 0;
                   }
-                  
-                  motorTest.MoveBasic(tmpMoveDir, 100);
-                  byte[] retFrame = ProcessFrame(inputBuffer, tmpMoveDir);
-                  clientOutputStream.write(retFrame);
-                  System.out.println(LocalDate.now().format(DateTimeFormatter.ISO_DATE)+": TX String: " + retFrame.toString());
-                  totalRead = 0;
                 }
               }
-           
-            }
-            
+              else{
+              retFrame = ProcessFrame(inputBuffer);
+              }
+               
+                    clientOutputStream.write(retFrame);
+                    System.out.println(LocalDate.now().format(DateTimeFormatter.ISO_DATE)+": TX String: " + retFrame.toString());
+                    
+            }            
           }
         } catch (IOException e) {
+          System.err.println(e.getMessage());
         }
       }
     });
@@ -117,6 +124,12 @@ public class TcpServerTest {
     return ServerThread;
   }
 
+  
+   private static byte[] ProcessFrame(byte[] inputFrame ) {
+   
+
+    return inputFrame;
+  }
   private static byte[] ProcessFrame(byte[] inputFrame, MotorTest.EBasicMoveDirections pBasicMoveDirection ) {
     byte[] retFrame = pBasicMoveDirection.toString().getBytes();
 
