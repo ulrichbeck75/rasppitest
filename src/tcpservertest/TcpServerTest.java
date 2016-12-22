@@ -23,6 +23,7 @@ public class TcpServerTest {
   private static Boolean stopServer;
   private static Thread _serverThread;
   private static ServerSocket serverSocket;
+  private static mqttTest _mqttTest;
   
   public static void main(String argv[]) throws Exception {
 //    String clientSentence;
@@ -45,7 +46,9 @@ public class TcpServerTest {
     stopServer = false;
     motorTest = new MotorTest();
     _serverThread = StartTcpServerThread();
-
+    _mqttTest = new mqttTest();
+    
+    
     while(true){
       if (!promptEnterKey()){
         stopServer = true;
